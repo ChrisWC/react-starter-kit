@@ -1,8 +1,8 @@
 {
   "release-type": "development", 
-  "name": "master", 
+  "name": "bolierplate_project", 
   "repository": "origin", 
-  "branch-type": "boilerplate", 
+  "branch-type": "branch", 
   "platforms": [], 
   "subtrees": []
 }
