@@ -2,7 +2,7 @@
   "release-type": "development", 
   "name": "bolierplate_project", 
   "repository": "origin", 
-  "branch-type": "branch", 
+  "branch-type": "boilerplate", 
   "platforms": [], 
   "subtrees": []
 }
