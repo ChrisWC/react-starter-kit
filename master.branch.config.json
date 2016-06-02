@@ -1,0 +1,8 @@
+{
+  "release-type": "development", 
+  "name": "master", 
+  "repository": "origin", 
+  "branch-type": "branch", 
+  "platforms": [], 
+  "subtrees": []
+}
