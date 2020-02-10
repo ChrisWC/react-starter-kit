@@ -35,19 +35,19 @@ function timer() {
         }' after ${time} ms`,
       );
     }
-  }
+  };
 
   const stop = () => {
     isStopped = true;
-  }
+  };
 
   return () => {
     return {
       isStopped,
       getTime,
-      stop
-    }
-  }
+      stop,
+    };
+  };
 }
 
 // TODO replace run
@@ -61,15 +61,13 @@ program
 program
   .command('run')
   .description('runs a command')
-  .action(() => {
-
-  });
+  .action(() => {});
 
 program
   .command('copy')
   .option('-w --watch', 'watches files')
   .description('copies static files')
-  .action((options) => {
+  .action(options => {
     const shouldWatch = options.watch;
     run(copy, options);
   });
@@ -77,16 +75,14 @@ program
 program
   .command('bundle')
   .description('bundles project')
-  .action((options) => {
-
-  });
+  .action(options => {});
 
 program
   .command('build')
   .option('-s --static', 'render statically')
   .option('-d --docker', 'with docker')
   .description('builds a project')
-  .action(async (options) => {
+  .action(async options => {
     await run(clean);
     await run(copy);
     await run(bundle);
@@ -112,10 +108,10 @@ program
   .action(async (port, options) => {
     if (server) return server;
 
-    console.log("running", port, "is silent ", options.silent)
+    console.log('running', port, 'is silent ', options.silent);
     server = await start(port, options);
-  })
+  });
 
-program.parse(process.argv)
+program.parse(process.argv);
 
 if (!(program.args && program.args.length)) program.help();

@@ -58,16 +58,7 @@ function createCompilationPromise(name, compiler, config) {
   });
 }
 
-
-/**
- * Launches a development web server with "live reload" functionality -
- * synchronizing URLs, interactions and code changes across multiple devices.
- */
-async function start(port, options) {
-  let server = express();
-  server.use(errorOverlayMiddleware());
-  server.use(express.static(path.resolve(__dirname, '../public')));
-
+function configureWebpack() {
   // Configure client-side hot module replacement
   const clientConfig = webpackConfig.find(config => config.name === 'client');
   clientConfig.entry.client = ['./tools/lib/webpackHotDevClient']
@@ -95,6 +86,20 @@ async function start(port, options) {
     x => x.loader !== 'null-loader',
   );
   serverConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+
+
+  return [clientConfig, serverConfig];
+}
+/**
+ * Launches a development web server with "live reload" functionality -
+ * synchronizing URLs, interactions and code changes across multiple devices.
+ */
+async function start(port, options) {
+  const server = express();
+  server.use(errorOverlayMiddleware());
+  server.use(express.static(path.resolve(__dirname, '../public')));
+
+  const [clientConfig, serverConfig] = configureWebpack();
 
   // Configure compilation
   await run(clean);
