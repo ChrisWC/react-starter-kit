@@ -77,8 +77,9 @@ function configureWebpack() {
   );
   serverConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
 
+  const publicPath = clientConfig.output.publicPath;
 
-  return [clientConfig, serverConfig];
+  return {publicPath};
 }
 /**
  * Launches a development web server with "live reload" functionality -
@@ -89,7 +90,7 @@ async function start(port, options) {
   server.use(errorOverlayMiddleware());
   server.use(express.static(path.resolve(__dirname, '../public')));
 
-  const [clientConfig, serverConfig] = configureWebpack();
+  const {publicPath} = configureWebpack();
 
   // Configure compilation
   await run(clean);
@@ -112,7 +113,7 @@ async function start(port, options) {
   // https://github.com/webpack/webpack-dev-middleware
   server.use(
     webpackDevMiddleware(clientCompiler, {
-      publicPath: clientConfig.output.publicPath,
+      publicPath,
       logLevel: 'silent',
       watchOptions,
     }),
