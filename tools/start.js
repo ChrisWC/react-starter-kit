@@ -150,21 +150,7 @@ async function start(port, options) {
     return app.hot
       .check(true)
       .then(updatedModules => {
-        if (!updatedModules) {
-          if (fromUpdate) {
-            console.info(`${hmrPrefix}Update applied.`);
-          }
-          return;
-        }
-        if (updatedModules.length === 0) {
-          console.info(`${hmrPrefix}Nothing hot updated.`);
-        } else {
-          console.info(`${hmrPrefix}Updated modules:`);
-          updatedModules.forEach(moduleId =>
-            console.info(`${hmrPrefix} - ${moduleId}`),
-          );
-          checkForUpdate(true);
-        }
+        // TODO log
       })
       .catch(error => {
         if (['abort', 'fail'].includes(app.hot.status())) {
@@ -194,9 +180,6 @@ async function start(port, options) {
   await clientPromise;
   await serverPromise;
 
-  const timeStart = new Date();
-  console.info(`[${format(timeStart)}] Launching server...`);
-
   // Load compiled src/server.js as a middleware
   // eslint-disable-next-line global-require, import/no-unresolved
   app = require('../build/server').default;
@@ -218,9 +201,6 @@ async function start(port, options) {
     ),
   );
 
-  const timeEnd = new Date();
-  const time = timeEnd.getTime() - timeStart.getTime();
-  console.info(`[${format(timeEnd)}] Server launched after ${time} ms`);
   return server;
 }
 
