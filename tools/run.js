@@ -10,7 +10,7 @@
 export function format(time) {
   return time.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, '$1');
 }
-
+// TODO replace with generic timer and in-code naming reports
 function run(fn, options) {
   const task = typeof fn.default === 'undefined' ? fn : fn.default;
   const start = new Date();

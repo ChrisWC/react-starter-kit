@@ -16,6 +16,7 @@
     "@babel/polyfill": "^7.7.0",
     "body-parser": "^1.19.0",
     "classnames": "^2.2.6",
+    "commander": "^4.1.1",
     "cookie-parser": "^1.4.3",
     "express": "^4.16.3",
     "express-graphql": "~0.8.0",
@@ -153,6 +154,6 @@
     "deploy": "babel-node tools/run deploy",
     "render": "babel-node tools/run render",
     "serve": "babel-node tools/run runServer",
-    "start": "babel-node tools/run start"
+    "app": "babel-node tools/index"
   }
 }

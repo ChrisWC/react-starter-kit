@@ -17,7 +17,7 @@ import { format } from './run';
  * Copies static files such as robots.txt, favicon.ico to the
  * output (build) folder.
  */
-async function copy() {
+async function copy(options) {
   await makeDir('build');
   await Promise.all([
     writeFile(
@@ -40,7 +40,7 @@ async function copy() {
     copyDir('public', 'build/public'),
   ]);
 
-  if (process.argv.includes('--watch')) {
+  if (options.watch) {
     const watcher = chokidar.watch(['public/**/*'], { ignoreInitial: true });
 
     watcher.on('all', async (event, filePath) => {

@@ -58,15 +58,13 @@ function createCompilationPromise(name, compiler, config) {
   });
 }
 
-let server;
 
 /**
  * Launches a development web server with "live reload" functionality -
  * synchronizing URLs, interactions and code changes across multiple devices.
  */
-async function start() {
-  if (server) return server;
-  server = express();
+async function start(port, options) {
+  let server = express();
   server.use(errorOverlayMiddleware());
   server.use(express.static(path.resolve(__dirname, '../public')));
 
@@ -211,8 +209,6 @@ async function start() {
   appPromiseIsResolved = true;
   appPromiseResolve();
 
-  const port = process.env.PORT ? Number(process.env.PORT) : undefined;
-
   // Launch the development server with Browsersync and HMR
   await new Promise((resolve, reject) =>
     browserSync.create().init(
@@ -220,7 +216,7 @@ async function start() {
         // https://www.browsersync.io/docs/options
         server: 'src/server.js',
         middleware: [server],
-        open: !process.argv.includes('--silent'),
+        open: !options.silent,
         ...(isDebug ? {} : { notify: false, ui: false }),
         ...(port ? { port } : null),
       },
