@@ -94,6 +94,7 @@ async function start(port, options) {
 
   // Configure compilation
   await run(clean);
+
   const multiCompiler = webpack(webpackConfig);
   const clientCompiler = multiCompiler.compilers.find(
     compiler => compiler.name === 'client',
@@ -132,6 +133,10 @@ async function start(port, options) {
     appPromise = new Promise(resolve => (appPromiseResolve = resolve));
   });
 
+  const resolveAppPromise = () => {
+    appPromiseIsResolved = true;
+    appPromiseResolve();
+  }
   let app;
   server.use((req, res) => {
     appPromise
@@ -169,10 +174,7 @@ async function start(port, options) {
 
   serverCompiler.watch(watchOptions, (error, stats) => {
     if (app && !error && !stats.hasErrors()) {
-      checkForUpdate().then(() => {
-        appPromiseIsResolved = true;
-        appPromiseResolve();
-      });
+      checkForUpdate().then(resolveAppPromise);
     }
   });
 
@@ -183,12 +185,10 @@ async function start(port, options) {
   // Load compiled src/server.js as a middleware
   // eslint-disable-next-line global-require, import/no-unresolved
   app = require('../build/server').default;
-  appPromiseIsResolved = true;
-  appPromiseResolve();
+  resolveAppPromise();
 
   // Launch the development server with Browsersync and HMR
-  await new Promise((resolve, reject) =>
-    browserSync.create().init(
+  await browserSync.create().init(
       {
         // https://www.browsersync.io/docs/options
         server: 'src/server.js',
@@ -196,9 +196,7 @@ async function start(port, options) {
         open: !options.silent,
         ...(isDebug ? {} : { notify: false, ui: false }),
         ...(port ? { port } : null),
-      },
-      (error, bs) => (error ? reject(error) : resolve(bs)),
-    ),
+      }
   );
 
   return server;
