@@ -19,16 +19,16 @@ import pkg from '../package.json';
  * Compiles the project from source files into a distributable
  * format and copies it to the output (build) folder.
  */
-async function build() {
-  await run(clean);
-  await run(copy);
-  await run(bundle);
+async function build(options) {
+  await clean(options);
+  await copy(options);
+  await bundle(options);
 
-  if (process.argv.includes('--static')) {
-    await run(render);
+  if (options.static) {
+    await render(options);
   }
 
-  if (process.argv.includes('--docker')) {
+  if (options.docker) {
     cp.spawnSync('docker', ['build', '-t', pkg.name, '.'], {
       stdio: 'inherit',
     });

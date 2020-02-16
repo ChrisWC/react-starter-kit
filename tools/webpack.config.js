@@ -286,7 +286,7 @@ const config = {
 // Configuration for the client-side bundle (client.js)
 // -----------------------------------------------------------------------------
 
-const clientConfig = {
+export const clientConfig = {
   ...config,
 
   name: 'client',
@@ -379,7 +379,7 @@ const clientConfig = {
 // Configuration for the server-side bundle (server.js)
 // -----------------------------------------------------------------------------
 
-const serverConfig = {
+export const serverConfig = {
   ...config,
 
   name: 'server',

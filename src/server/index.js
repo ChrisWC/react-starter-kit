@@ -19,24 +19,21 @@ import nodeFetch from 'node-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
 import PrettyError from 'pretty-error';
-import App from './components/App';
-import Html from './components/Html';
-import { ErrorPageWithoutStyle } from './routes/error/ErrorPage';
-import errorPageStyle from './routes/error/ErrorPage.css';
-import createFetch from './createFetch';
-import passport from './passport';
-import router from './router';
-import models from './data/models';
-import schema from './data/schema';
+import App from '../components/App';
+import Html from '../components/Html';
+import { ErrorPageWithoutStyle } from '../routes/error/ErrorPage';
+import errorPageStyle from '../routes/error/ErrorPage.css';
+import createFetch from '../createFetch';
+import passport from '../passport';
+import router from '../router';
+import models from '../data/models';
+import schema from '../data/schema';
 // import assets from './asset-manifest.json'; // eslint-disable-line import/no-unresolved
 import chunks from './chunk-manifest.json'; // eslint-disable-line import/no-unresolved
-import config from './config';
+import config from '../config';
+
 
 import ssr from './server/ssr';
-
-import webpackDevMiddleware from 'webpack-dev-middleware';
-import webpackHotMiddleware from 'webpack-hot-middleware';
-import errorOverlayMiddleware from 'react-dev-utils/errorOverlayMiddleware';
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -77,6 +74,7 @@ app.use(
     getToken: req => req.cookies.id_token,
   }),
 );
+
 // Error handler for express-jwt
 app.use((err, req, res, next) => {
   // eslint-disable-line no-unused-vars
@@ -97,7 +95,6 @@ app.get(
     session: false,
   }),
 );
-
 app.get(
   '/login/facebook/return',
   passport.authenticate('facebook', {
@@ -128,7 +125,7 @@ app.use(
 //
 // Register server-side rendering middleware
 // -----------------------------------------------------------------------------
-app.get('*', ssr(chunks, config));
+app.get('*', ssr);
 
 //
 // Error handling

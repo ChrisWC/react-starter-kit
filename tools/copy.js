@@ -13,6 +13,30 @@ import { writeFile, copyFile, makeDir, copyDir, cleanDir } from './lib/fs';
 import pkg from '../package.json';
 import { format } from './run';
 
+async function watch(options) {
+  const watcher = chokidar.watch(['public/**/*'], { ignoreInitial: true });
+
+  watcher.on('all', async (event, filePath) => {
+    const src = path.relative('./', filePath);
+    const dist = path.join(
+      'build/',
+      src.startsWith('src') ? path.relative('src', src) : src,
+    );
+    switch (event) {
+      case 'add':
+      case 'change':
+        await makeDir(path.dirname(dist));
+        await copyFile(filePath, dist);
+        break;
+      case 'unlink':
+      case 'unlinkDir':
+        cleanDir(dist, { nosort: true, dot: true });
+        break;
+      default:
+        return;
+    }
+  });
+}
 /**
  * Copies static files such as robots.txt, favicon.ico to the
  * output (build) folder.
@@ -41,32 +65,7 @@ async function copy(options) {
   ]);
 
   if (options.watch) {
-    const watcher = chokidar.watch(['public/**/*'], { ignoreInitial: true });
-
-    watcher.on('all', async (event, filePath) => {
-      const start = new Date();
-      const src = path.relative('./', filePath);
-      const dist = path.join(
-        'build/',
-        src.startsWith('src') ? path.relative('src', src) : src,
-      );
-      switch (event) {
-        case 'add':
-        case 'change':
-          await makeDir(path.dirname(dist));
-          await copyFile(filePath, dist);
-          break;
-        case 'unlink':
-        case 'unlinkDir':
-          cleanDir(dist, { nosort: true, dot: true });
-          break;
-        default:
-          return;
-      }
-      const end = new Date();
-      const time = end.getTime() - start.getTime();
-      console.info(`[${format(end)}] ${event} '${dist}' after ${time} ms`);
-    });
+    watch(options);
   }
 }
 

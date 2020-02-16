@@ -1,5 +1,7 @@
 import * as commander from 'commander';
 
+import path from 'path';
+
 import cp from 'child_process';
 import run from './run';
 import copy from './copy';
@@ -108,8 +110,11 @@ program
   .action(async (port, options) => {
     if (server) return server;
 
+    await clean(options);
+    await copy(copy);
+    await bundle(options);
     console.log('running', port, 'is silent ', options.silent);
-    server = await start(port, options);
+    server = await start(port, path.resolve(__dirname, "../build/server"), options);
   });
 
 program.parse(process.argv);

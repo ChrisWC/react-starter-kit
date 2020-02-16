@@ -18,6 +18,8 @@ import webpackConfig from './webpack.config';
 import run, { format } from './run';
 import clean from './clean';
 
+import { serverMiddleware } from './utils/serverMiddleware';
+
 const isDebug = !process.argv.includes('--release');
 
 // https://webpack.js.org/configuration/watch/#watchoptions
@@ -31,14 +33,7 @@ const watchOptions = {
 
 function createCompilationPromise(name, compiler, config) {
   return new Promise((resolve, reject) => {
-    let timeStart = new Date();
-    compiler.hooks.compile.tap(name, () => {
-      timeStart = new Date();
-    });
-
     compiler.hooks.done.tap(name, stats => {
-      const timeEnd = new Date();
-      const time = timeEnd.getTime() - timeStart.getTime();
       if (stats.hasErrors()) {
         reject(new Error('Compilation failed!'));
       } else {
@@ -81,125 +76,84 @@ function configureWebpack() {
 
   return {publicPath};
 }
+
+function bundle(webpackModule, name) {
+  const compiler = webpackModule.compilers.find(
+    compiler => compiler.name === name
+  );
+
+  const promise = createCompilationPromise(
+    name,
+    compiler
+  );
+
+  return [compiler, promise];
+}
 /**
  * Launches a development web server with "live reload" functionality -
  * synchronizing URLs, interactions and code changes across multiple devices.
  */
-async function start(port, options) {
-  const server = express();
-  server.use(errorOverlayMiddleware());
-  server.use(express.static(path.resolve(__dirname, '../public')));
-
+async function start(port, serverPath, options) {
+  const [getInstance, middleware, reload, update] = serverMiddleware(serverPath);
   const {publicPath} = configureWebpack();
 
   // Configure compilation
   await run(clean);
 
-  const multiCompiler = webpack(webpackConfig);
-  const clientCompiler = multiCompiler.compilers.find(
-    compiler => compiler.name === 'client',
-  );
-  const serverCompiler = multiCompiler.compilers.find(
-    compiler => compiler.name === 'server',
-  );
-  const clientPromise = createCompilationPromise(
-    'client',
-    clientCompiler
-  );
-  const serverPromise = createCompilationPromise(
-    'server',
-    serverCompiler
+  const webpackModule = webpack(webpackConfig);
+
+  const [clientCompiler, clientPromise] = bundle(
+    webpackModule,
+    'client'
   );
 
+  const [serverCompiler, serverPromise] = bundle(
+    webpackModule,
+    'server'
+  )
+
+  middleware.use(errorOverlayMiddleware());
+  middleware.use(express.static(path.resolve(__dirname, '../public')));
+
   // https://github.com/webpack/webpack-dev-middleware
-  server.use(
-    webpackDevMiddleware(clientCompiler, {
+  const dm =  webpackDevMiddleware(clientCompiler, {
       publicPath,
       logLevel: 'silent',
       watchOptions,
-    }),
-  );
+    });
 
   // https://github.com/glenjamin/webpack-hot-middleware
-  server.use(webpackHotMiddleware(clientCompiler, { log: false }));
+  const hm = webpackHotMiddleware(clientCompiler, { log: false });
 
-  let appPromise;
-  let appPromiseResolve;
-  let appPromiseIsResolved = true;
-  serverCompiler.hooks.compile.tap('server', () => {
-    if (!appPromiseIsResolved) return;
-    appPromiseIsResolved = false;
-    // eslint-disable-next-line no-return-assign
-    appPromise = new Promise(resolve => (appPromiseResolve = resolve));
-  });
-
-  const resolveAppPromise = () => {
-    appPromiseIsResolved = true;
-    appPromiseResolve();
-  }
-  let app;
-  server.use((req, res) => {
-    appPromise
-      .then(() => app.handle(req, res))
-      .catch(error => console.error(error));
-  });
-
-  function checkForUpdate(fromUpdate) {
-    const hmrPrefix = '[\x1b[35mHMR\x1b[0m] ';
-    if (!app.hot) {
-      throw new Error(`${hmrPrefix}Hot Module Replacement is disabled.`);
-    }
-    if (app.hot.status() !== 'idle') {
-      return Promise.resolve();
-    }
-    return app.hot
-      .check(true)
-      .then(updatedModules => {
-        // TODO log
-      })
-      .catch(error => {
-        if (['abort', 'fail'].includes(app.hot.status())) {
-          console.warn(`${hmrPrefix}Cannot apply update.`);
-          delete require.cache[require.resolve('../build/server')];
-          // eslint-disable-next-line global-require, import/no-unresolved
-          app = require('../build/server').default;
-          console.warn(`${hmrPrefix}App has been reloaded.`);
-        } else {
-          console.warn(
-            `${hmrPrefix}Update failed: ${error.stack || error.message}`,
-          );
-        }
-      });
-  }
+  middleware.use(dm);
+  middleware.use(hm);
 
   serverCompiler.watch(watchOptions, (error, stats) => {
-    if (app && !error && !stats.hasErrors()) {
-      checkForUpdate().then(resolveAppPromise);
+    console.log("HMMM")
+    if (getInstance() && !error && !stats.hasErrors()) {
+      update();
     }
   });
 
   // Wait until both client-side and server-side bundles are ready
   await clientPromise;
   await serverPromise;
-
-  // Load compiled src/server.js as a middleware
-  // eslint-disable-next-line global-require, import/no-unresolved
-  app = require('../build/server').default;
-  resolveAppPromise();
+  await reload();
 
   // Launch the development server with Browsersync and HMR
-  await browserSync.create().init(
+  await new Promise((resolve, reject) =>
+    browserSync.create().init(
       {
         // https://www.browsersync.io/docs/options
-        server: 'src/server.js',
-        middleware: [server],
-        open: !options.silent,
+        server: 'build/server.js',
+        middleware: [middleware],
+        open: !process.argv.includes('--silent'),
         ...(isDebug ? {} : { notify: false, ui: false }),
         ...(port ? { port } : null),
-      }
+      },
+      (error, bs) => (error ? reject(error) : resolve(bs)),
+    ),
   );
-
-  return server;
 }
 
 export default start;
